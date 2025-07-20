@@ -1,0 +1,948 @@
+{% extends 'analysis/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Dashboard - Statistical Analysis{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar with Controls -->
+    <div class="col-lg-3">
+        <div class="sidebar">
+            <h5 class="section-title">
+                <i class="fas fa-cogs me-2"></i>Analysis Configuration
+            </h5>
+            
+            <form method="post" action="{% url 'analysis:update_analysis' %}" enctype="multipart/form-data" id="analysisForm">
+                {% csrf_token %}
+                {{ form|crispy }}
+                
+                <!-- Manual Update Button -->
+                <div class="mt-3 text-center">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-sync-alt me-2"></i>Update Analysis
+                    </button>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="mt-3">
+                    <div class="row">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="refreshPlots()">
+                                <i class="fas fa-chart-bar me-1"></i>Refresh Plots
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="refreshAll()">
+                                <i class="fas fa-redo me-1"></i>Refresh All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Data Information Card -->
+            {% if data_info %}
+                <div class="data-info-card mt-4">
+                    <h6><i class="fas fa-database me-2"></i>Dataset Information</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small>Rows:</small><br>
+                            <strong>{{ data_info.shape.0|floatformat:0 }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small>Columns:</small><br>
+                            <strong>{{ data_info.shape.1 }}</strong>
+                        </div>
+                    </div>
+                    <hr class="my-2" style="border-color: rgba(255,255,255,0.3);">
+                    <small>
+                        <strong>Numeric columns:</strong> {{ data_info.numeric_columns|length }}<br>
+                        <strong>Categorical columns:</strong> {{ data_info.categorical_columns|length }}
+                    </small>
+                </div>
+            {% endif %}
+            
+            {% if error %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Notice:</strong> {{ error }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="col-lg-9">
+        <div class="main-content">
+            <!-- Welcome Section -->
+            <div class="mb-4">
+                <h2 class="text-primary">
+                    <i class="fas fa-chart-line me-3"></i>Statistical Analysis Dashboard
+                </h2>
+                <p class="lead text-muted">
+                    Interactive statistical analysis and visualization tool. Configure your analysis parameters 
+                    in the sidebar and explore your data through multiple visualization types and statistical tests.
+                </p>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="analysisTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="plots-tab" data-bs-toggle="tab" data-bs-target="#plots" 
+                            type="button" role="tab">
+                        <i class="fas fa-chart-bar me-2"></i>Visualizations
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" 
+                            type="button" role="tab">
+                        <i class="fas fa-calculator me-2"></i>Statistics
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" 
+                            type="button" role="tab">
+                        <i class="fas fa-table me-2"></i>Data Preview
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="ml-tab" data-bs-toggle="tab" data-bs-target="#machine-learning" 
+                            type="button" role="tab">
+                        <i class="fas fa-brain me-2"></i>Machine Learning
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="analysisTabContent">
+                <!-- Plots Tab -->
+                <div class="tab-pane fade show active" id="plots" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="plot-container">
+                                <h5 class="text-center mb-3">
+                                    <i class="fas fa-chart-column me-2"></i>Distribution Plot
+                                </h5>
+                                <div id="histogram-plot">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                        <p class="mt-2">Loading histogram...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="plot-container">
+                                <h5 class="text-center mb-3">
+                                    <i class="fas fa-chart-simple me-2"></i>Box Plot
+                                </h5>
+                                <div id="boxplot-plot">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                        <p class="mt-2">Loading box plot...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="plot-container">
+                                <h5 class="text-center mb-3">
+                                    <i class="fas fa-chart-scatter me-2"></i>Q-Q Plot
+                                </h5>
+                                <div id="qqplot-plot">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                        <p class="mt-2">Loading Q-Q plot...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="plot-container">
+                                <h5 class="text-center mb-3">
+                                    <i class="fas fa-grip me-2"></i>Correlation Matrix
+                                </h5>
+                                <div id="correlation-plot">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                        <p class="mt-2">Loading correlation plot...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Tab -->
+                <div class="tab-pane fade" id="statistics" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="stat-card">
+                                <h5><i class="fas fa-chart-line me-2"></i>Summary Statistics</h5>
+                                <div id="summary-stats">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x text-white"></i>
+                                        <p class="mt-2">Loading statistics...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #74c0fc);">
+                                <h5><i class="fas fa-flask me-2"></i>Hypothesis Test</h5>
+                                <div id="hypothesis-test">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x text-white"></i>
+                                        <p class="mt-2">Loading test results...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribution Details -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>Distribution Analysis
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="distribution-details">
+                                        <div class="loading-spinner">
+                                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                            <p class="mt-2">Loading distribution analysis...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Tab -->
+                <div class="tab-pane fade" id="data" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-table me-2"></i>Data Preview
+                            </h5>
+                            <button class="btn btn-outline-primary btn-sm" onclick="refreshDataPreview()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="data-preview">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                    <p class="mt-2">Loading data preview...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Machine Learning Tab -->
+                <div class="tab-pane fade" id="machine-learning" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-brain me-2"></i>Support Vector Machine (SVM) Classifier
+                                    </h5>
+                                    <div>
+                                        <button class="btn btn-success" id="train-svm-btn" onclick="trainSVM()" style="display:none;">
+                                            <i class="fas fa-play me-1"></i>Train SVM Model
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="refreshSVMResults()">
+                                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="svm-status">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Quick Start Guide:</strong> 
+                                            <ol class="mb-0 mt-2">
+                                                <li>Upload an XLS/CSV file with your dataset</li>
+                                                <li>Enable "Machine Learning (SVM)" in the sidebar configuration</li>
+                                                <li>Select your target column (the column you want to predict)</li>
+                                                <li>Choose SVM parameters (kernel type, train/test split ratio)</li>
+                                                <li>Click "Train SVM Model" to start training</li>
+                                            </ol>
+                                            <div class="mt-2">
+                                                <small class="text-muted">
+                                                    <strong>Note:</strong> SVM will use all columns except the target as features for training.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SVM Results Section -->
+                    <div id="svm-results-section" style="display:none;">
+                        <div class="row">
+                            <!-- Metrics Card -->
+                            <div class="col-lg-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-chart-line me-2"></i>Performance Metrics
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="svm-metrics">
+                                            <div class="loading-spinner">
+                                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                                <p class="mt-2">Loading metrics...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Model Info Card -->
+                            <div class="col-lg-6">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>Model Information
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="svm-model-info">
+                                            <div class="loading-spinner">
+                                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                                <p class="mt-2">Loading model info...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Metrics Chart -->
+                            <div class="col-lg-6">
+                                <div class="plot-container">
+                                    <h5 class="text-center mb-3">
+                                        <i class="fas fa-chart-bar me-2"></i>Performance Metrics
+                                    </h5>
+                                    <div id="svm-metrics-plot">
+                                        <div class="loading-spinner">
+                                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                            <p class="mt-2">Loading metrics chart...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Confusion Matrix -->
+                            <div class="col-lg-6">
+                                <div class="plot-container">
+                                    <h5 class="text-center mb-3">
+                                        <i class="fas fa-grip me-2"></i>Confusion Matrix
+                                    </h5>
+                                    <div id="svm-confusion-matrix">
+                                        <div class="loading-spinner">
+                                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                            <p class="mt-2">Loading confusion matrix...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        loadPlots();
+        loadStatistics();
+        loadDataPreview();
+        
+        // Handle form submission
+        $('#analysis-form').on('submit', function(e) {
+            // Show loading indicator
+            showFormLoading();
+        });
+        
+        // Check if we just came back from a form submission
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('updated') === '1') {
+            // Refresh all data after form update
+            setTimeout(function() {
+                refreshAll();
+            }, 500);
+        }
+        
+        // Removed auto-submit to prevent infinite loop
+        // Form will only submit when user explicitly clicks the submit button or data source changes
+        
+        $('input[name="data_source"]').on('change', function() {
+            const dataSource = $(this).val();
+            $('#upload-section').toggle(dataSource === 'upload');
+            $('#random-section').toggle(dataSource === 'random');
+            $('#column-section').toggle(dataSource !== 'random');
+            
+            // Submit form automatically when data source changes
+            setTimeout(function() {
+                $('#analysis-form').submit();
+            }, 100);
+        });
+        
+        $('input[name="data_source"]:checked').trigger('change');
+        
+        $('input[name="bins"]').on('input', function() {
+            $(this).next('output').val($(this).val());
+        });
+        
+        // Handle SVM enable/disable
+        $('input[name="enable_svm"]').on('change', function() {
+            $('#svm-config-section').toggle($(this).is(':checked'));
+            // Check SVM status when enabled/disabled
+            setTimeout(checkSVMStatus, 100);
+        });
+        
+        // Handle SVM target column change
+        $('select[name="svm_target_column"]').on('change', function() {
+            // Check SVM status when target column changes
+            setTimeout(checkSVMStatus, 100);
+        });
+        
+        // Check initial SVM state
+        if ($('input[name="enable_svm"]').is(':checked')) {
+            $('#svm-config-section').show();
+        }
+        
+        // Check SVM status when ML tab is clicked
+        $('#ml-tab').on('click', function() {
+            checkSVMStatus();
+        });
+    });
+    
+    function loadPlots() {
+        showLoading('histogram-plot');
+        showLoading('boxplot-plot');
+        showLoading('qqplot-plot');
+        showLoading('correlation-plot');
+        
+        $.ajax({
+            url: '{% url "analysis:get_plots" %}',
+            type: 'GET',
+            success: function(data) {
+                if (data.error) {
+                    showError('histogram-plot', data.error);
+                    showError('boxplot-plot', data.error);
+                    showError('qqplot-plot', data.error);
+                    showError('correlation-plot', data.error);
+                    return;
+                }
+                
+                // Render plots
+                if (data.histogram) {
+                    const histogramData = JSON.parse(data.histogram);
+                    Plotly.newPlot('histogram-plot', histogramData.data, histogramData.layout, {responsive: true});
+                    $('#histogram-plot').addClass('loaded');
+                }
+                
+                if (data.boxplot) {
+                    const boxplotData = JSON.parse(data.boxplot);
+                    Plotly.newPlot('boxplot-plot', boxplotData.data, boxplotData.layout, {responsive: true});
+                    $('#boxplot-plot').addClass('loaded');
+                }
+                
+                if (data.qqplot) {
+                    const qqplotData = JSON.parse(data.qqplot);
+                    Plotly.newPlot('qqplot-plot', qqplotData.data, qqplotData.layout, {responsive: true});
+                    $('#qqplot-plot').addClass('loaded');
+                }
+                
+                if (data.correlation) {
+                    const correlationData = JSON.parse(data.correlation);
+                    Plotly.newPlot('correlation-plot', correlationData.data, correlationData.layout, {responsive: true});
+                    $('#correlation-plot').addClass('loaded');
+                }
+            },
+            error: function(xhr, status, error) {
+                const errorMsg = 'Error loading plots: ' + error;
+                showError('histogram-plot', errorMsg);
+                showError('boxplot-plot', errorMsg);
+                showError('qqplot-plot', errorMsg);  
+                showError('correlation-plot', errorMsg);
+            }
+        });
+    }
+    
+    function loadStatistics() {
+        showLoading('summary-stats');
+        showLoading('hypothesis-test');
+        showLoading('distribution-details');
+        
+        $.ajax({
+            url: '{% url "analysis:get_statistics" %}',
+            type: 'GET',
+            success: function(data) {
+                if (data.error) {
+                    showError('summary-stats', data.error);
+                    showError('hypothesis-test', data.error);
+                    showError('distribution-details', data.error);
+                    return;
+                }
+                
+                // Display summary statistics
+                if (data.summary) {
+                    let summaryHtml = '<div class="row text-white">';
+                    
+                    if (data.summary.error) {
+                        summaryHtml += '<div class="col-12"><p>' + data.summary.error + '</p></div>';
+                    } else {
+                        summaryHtml += `
+                            <div class="col-6"><strong>Mean:</strong><br><span class="stat-value">${data.summary.mean ? data.summary.mean.toFixed(3) : 'N/A'}</span></div>
+                            <div class="col-6"><strong>Std Dev:</strong><br><span class="stat-value">${data.summary.std ? data.summary.std.toFixed(3) : 'N/A'}</span></div>
+                            <div class="col-6 mt-3"><strong>Median:</strong><br><span class="stat-value">${data.summary.median ? data.summary.median.toFixed(3) : 'N/A'}</span></div>
+                            <div class="col-6 mt-3"><strong>Count:</strong><br><span class="stat-value">${data.summary.count || 'N/A'}</span></div>
+                        `;
+                    }
+                    
+                    summaryHtml += '</div>';
+                    $('#summary-stats').html(summaryHtml).addClass('loaded');
+                }
+                
+                // Display hypothesis test
+                if (data.hypothesis_test) {
+                    let testHtml = '<div class="text-white">';
+                    
+                    if (data.hypothesis_test.error) {
+                        testHtml += '<p>' + data.hypothesis_test.error + '</p>';
+                    } else {
+                        const pValue = data.hypothesis_test.p_value;
+                        const isSignificant = pValue < 0.05;
+                        
+                        testHtml += `
+                            <p><strong>One-sample t-test (H₀: μ = 0)</strong></p>
+                            <p><strong>t-statistic:</strong> ${data.hypothesis_test.t_statistic ? data.hypothesis_test.t_statistic.toFixed(4) : 'N/A'}</p>
+                            <p><strong>p-value:</strong> ${pValue ? pValue.toFixed(6) : 'N/A'}</p>
+                            <p><strong>Result:</strong> ${isSignificant ? 'Reject H₀' : 'Fail to reject H₀'} (α = 0.05)</p>
+                            <p><strong>Normality:</strong> ${data.hypothesis_test.is_normal ? 'Normal' : 'Non-normal'} (Shapiro-Wilk)</p>
+                        `;
+                    }
+                    
+                    testHtml += '</div>';
+                    $('#hypothesis-test').html(testHtml).addClass('loaded');
+                }
+                
+                // Display distribution details
+                if (data.summary && !data.summary.error) {
+                    let detailsHtml = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-striped">
+                                    <tr><th>Statistic</th><th>Value</th></tr>
+                                    <tr><td>Count</td><td>${data.summary.count || 'N/A'}</td></tr>
+                                    <tr><td>Mean</td><td>${data.summary.mean ? data.summary.mean.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>Median</td><td>${data.summary.median ? data.summary.median.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>Standard Deviation</td><td>${data.summary.std ? data.summary.std.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>Variance</td><td>${data.summary.var ? data.summary.var.toFixed(6) : 'N/A'}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-striped">
+                                    <tr><th>Statistic</th><th>Value</th></tr>
+                                    <tr><td>Minimum</td><td>${data.summary.min ? data.summary.min.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>25th Percentile</td><td>${data.summary.q25 ? data.summary.q25.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>75th Percentile</td><td>${data.summary.q75 ? data.summary.q75.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>Maximum</td><td>${data.summary.max ? data.summary.max.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>Skewness</td><td>${data.summary.skewness ? data.summary.skewness.toFixed(6) : 'N/A'}</td></tr>
+                                    <tr><td>Kurtosis</td><td>${data.summary.kurtosis ? data.summary.kurtosis.toFixed(6) : 'N/A'}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    $('#distribution-details').html(detailsHtml).addClass('loaded');
+                } else {
+                    $('#distribution-details').html('<p>No distribution details available.</p>').addClass('loaded');
+                }
+            },
+            error: function(xhr, status, error) {
+                const errorMsg = 'Error loading statistics: ' + error;
+                showError('summary-stats', errorMsg);
+                showError('hypothesis-test', errorMsg);
+                showError('distribution-details', errorMsg);
+            }
+        });
+    }
+    
+    function loadDataPreview() {
+        showLoading('data-preview');
+        
+        $.ajax({
+            url: '{% url "analysis:get_data_preview" %}',
+            type: 'GET',
+            success: function(data) {
+                if (data.error) {
+                    showError('data-preview', data.error);
+                    return;
+                }
+                
+                // Create table
+                let tableHtml = `
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            Showing ${data.preview_rows} of ${data.total_rows} rows
+                        </small>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                `;
+                
+                // Add headers
+                data.columns.forEach(function(col) {
+                    tableHtml += `<th>${col}</th>`;
+                });
+                tableHtml += '</tr></thead><tbody>';
+                
+                // Add data rows
+                data.data.forEach(function(row) {
+                    tableHtml += '<tr>';
+                    row.forEach(function(cell) {
+                        const cellValue = cell !== null && cell !== undefined ? 
+                                         (typeof cell === 'number' ? cell.toFixed(4) : cell) : 
+                                         'N/A';
+                        tableHtml += `<td>${cellValue}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                });
+                
+                tableHtml += '</tbody></table></div>';
+                $('#data-preview').html(tableHtml).addClass('loaded');
+            },
+            error: function(xhr, status, error) {
+                showError('data-preview', 'Error loading data preview: ' + error);
+            }
+        });
+    }
+    
+    function updateColumnChoices() {
+        $.ajax({
+            url: '{% url "analysis:get_column_choices" %}',
+            type: 'GET',
+            success: function(data) {
+                if (data.columns) {
+                    const select = $('select[name="selected_column"]');
+                    select.empty();
+                    
+                    data.columns.forEach(function(col) {
+                        select.append(`<option value="${col.value}">${col.label}</option>`);
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating column choices:', error);
+            }
+        });
+    }
+    
+    function refreshDataPreview() {
+        loadDataPreview();
+    }
+    
+    function refreshPlots() {
+        $('#histogram-plot').removeClass('loaded');
+        $('#boxplot-plot').removeClass('loaded');
+        $('#qqplot-plot').removeClass('loaded');
+        $('#correlation-plot').removeClass('loaded');
+        loadPlots();
+    }
+    
+    function refreshAll() {
+        // Clear all loaded flags
+        $('#histogram-plot, #boxplot-plot, #qqplot-plot, #correlation-plot').removeClass('loaded');
+        $('#summary-stats, #hypothesis-test, #distribution-details').removeClass('loaded');
+        $('#data-preview').removeClass('loaded');
+        
+        // Reload everything
+        loadPlots();
+        loadStatistics();
+        loadDataPreview();
+        updateColumnChoices();
+        checkSVMStatus();
+    }
+    
+    // Show success message after form submission
+    function showSuccess(message) {
+        const alertHtml = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i><strong>Success!</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('.main-content').prepend(alertHtml);
+        
+        // Auto-dismiss after 3 seconds
+        setTimeout(function() {
+            $('.alert-success').fadeOut();
+        }, 3000);
+    }
+    
+    function showFormLoading() {
+        // Add loading spinner to submit button
+        const submitBtn = $('input[type="submit"], button[type="submit"]');
+        submitBtn.prop('disabled', true);
+        submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Updating...');
+    }
+    
+    function showLoading(elementId) {
+        $('#' + elementId).html(`
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p class="mt-2">Loading...</p>
+            </div>
+        `);
+    }
+    
+    function showError(elementId, message) {
+        $('#' + elementId).html(`
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>${message}
+            </div>
+        `);
+    }
+    
+    // SVM Functions
+    
+    function checkSVMStatus() {
+        $.ajax({
+            url: '{% url "analysis:get_svm_status" %}',
+            type: 'GET',
+            success: function(data) {
+                if (data.has_results) {
+                    $('#train-svm-btn').show();
+                    loadSVMResults();
+                } else {
+                    // Check if SVM is enabled in form and data source is suitable
+                    const svmEnabled = $('input[name="enable_svm"]').is(':checked');
+                    const dataSource = $('input[name="data_source"]:checked').val();
+                    const svmTargetColumn = $('select[name="svm_target_column"]').val();
+                    
+                    if (svmEnabled && dataSource !== 'random' && svmTargetColumn) {
+                        $('#train-svm-btn').show();
+                        showSVMStatus('ready', 'SVM is configured and ready for training.');
+                    } else if (svmEnabled && dataSource === 'random') {
+                        $('#train-svm-btn').hide();
+                        showSVMStatus('info', 'SVM is not available for random data. Please upload a dataset.');
+                                         } else if (svmEnabled && !svmTargetColumn) {
+                        $('#train-svm-btn').hide();
+                        showSVMStatus('warning', 'Please select a target column for SVM training.');
+                    } else {
+                        $('#train-svm-btn').hide();
+                        showSVMStatus('info', 'Enable "Machine Learning (SVM)" in the sidebar to get started.');
+                    }
+                }
+            },
+            error: function() {
+                showSVMStatus('error', 'Error checking SVM status.');
+            }
+        });
+    }
+    
+    function trainSVM() {
+        // Show loading state
+        const trainBtn = $('#train-svm-btn');
+        const originalText = trainBtn.html();
+        trainBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Training...');
+        
+        showSVMStatus('training', 'Training SVM model... This may take a few moments.');
+        
+        // Get current form values
+        const svmTargetColumn = $('select[name="svm_target_column"]').val();
+        const svmKernel = $('select[name="svm_kernel"]').val();
+        const svmTestSize = $('select[name="svm_test_size"]').val();
+        
+        $.ajax({
+            url: '{% url "analysis:train_svm" %}',
+            type: 'POST',
+            data: {
+                'svm_target_column': svmTargetColumn,
+                'svm_kernel': svmKernel,
+                'svm_test_size': svmTestSize
+            },
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                trainBtn.prop('disabled', false).html(originalText);
+                
+                if (data.success) {
+                    showSVMStatus('success', data.message);
+                    // Load and display results
+                    setTimeout(function() {
+                        loadSVMResults();
+                    }, 1000);
+                } else {
+                    showSVMStatus('error', data.error || 'Training failed');
+                }
+            },
+            error: function(xhr, status, error) {
+                trainBtn.prop('disabled', false).html(originalText);
+                showSVMStatus('error', 'Training failed: ' + error);
+            }
+        });
+    }
+    
+    function loadSVMResults() {
+        showLoading('svm-metrics');
+        showLoading('svm-model-info');
+        showLoading('svm-metrics-plot');
+        showLoading('svm-confusion-matrix');
+        
+        $.ajax({
+            url: '{% url "analysis:get_svm_results" %}',
+            type: 'GET',
+            success: function(data) {
+                if (data.error) {
+                    showSVMStatus('error', data.error);
+                    return;
+                }
+                
+                // Show results section
+                $('#svm-results-section').show();
+                
+                // Display metrics
+                displaySVMMetrics(data.metrics);
+                
+                // Display model info
+                displaySVMModelInfo(data.metrics);
+                
+                // Display plots
+                if (data.plots.metrics_chart) {
+                    const metricsData = JSON.parse(data.plots.metrics_chart);
+                    Plotly.newPlot('svm-metrics-plot', metricsData.data, metricsData.layout, {responsive: true});
+                    $('#svm-metrics-plot').addClass('loaded');
+                }
+                
+                if (data.plots.confusion_matrix) {
+                    const confusionData = JSON.parse(data.plots.confusion_matrix);
+                    Plotly.newPlot('svm-confusion-matrix', confusionData.data, confusionData.layout, {responsive: true});
+                    $('#svm-confusion-matrix').addClass('loaded');
+                }
+                
+                showSVMStatus('success', 'SVM model results loaded successfully.');
+            },
+            error: function(xhr, status, error) {
+                showSVMStatus('error', 'Error loading SVM results: ' + error);
+                showError('svm-metrics', 'Error loading metrics');
+                showError('svm-model-info', 'Error loading model info');
+                showError('svm-metrics-plot', 'Error loading metrics chart');
+                showError('svm-confusion-matrix', 'Error loading confusion matrix');
+            }
+        });
+    }
+    
+    function displaySVMMetrics(metrics) {
+        const metricsHtml = `
+            <div class="row">
+                <div class="col-6">
+                    <div class="metric-item text-center p-2">
+                        <h4 class="text-primary mb-1">${(metrics.accuracy * 100).toFixed(1)}%</h4>
+                        <small class="text-muted">Accuracy</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="metric-item text-center p-2">
+                        <h4 class="text-success mb-1">${(metrics.precision * 100).toFixed(1)}%</h4>
+                        <small class="text-muted">Precision</small>
+                    </div>
+                </div>
+                <div class="col-6 mt-3">
+                    <div class="metric-item text-center p-2">
+                        <h4 class="text-info mb-1">${(metrics.recall * 100).toFixed(1)}%</h4>
+                        <small class="text-muted">Recall</small>
+                    </div>
+                </div>
+                <div class="col-6 mt-3">
+                    <div class="metric-item text-center p-2">
+                        <h4 class="text-warning mb-1">${(metrics.f1_score * 100).toFixed(1)}%</h4>
+                        <small class="text-muted">F1-Score</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#svm-metrics').html(metricsHtml).addClass('loaded');
+    }
+    
+    function displaySVMModelInfo(metrics) {
+        const infoHtml = `
+            <table class="table table-sm">
+                <tr><td><strong>Kernel Type:</strong></td><td>${metrics.kernel_type.toUpperCase()}</td></tr>
+                <tr><td><strong>Target Column:</strong></td><td>${metrics.target_column}</td></tr>
+                <tr><td><strong>Features:</strong></td><td>${metrics.n_features}</td></tr>
+                <tr><td><strong>Total Samples:</strong></td><td>${metrics.n_samples}</td></tr>
+                <tr><td><strong>Training Samples:</strong></td><td>${metrics.n_train}</td></tr>
+                <tr><td><strong>Test Samples:</strong></td><td>${metrics.n_test}</td></tr>
+                <tr><td><strong>Test Size:</strong></td><td>${(metrics.test_size * 100).toFixed(0)}%</td></tr>
+                <tr><td><strong>Classes:</strong></td><td>${metrics.class_labels.join(', ')}</td></tr>
+                <tr><td><strong>Trained:</strong></td><td>${metrics.training_date}</td></tr>
+            </table>
+        `;
+        $('#svm-model-info').html(infoHtml).addClass('loaded');
+    }
+    
+    function showSVMStatus(type, message) {
+        let alertClass, icon;
+        switch (type) {
+            case 'success':
+                alertClass = 'alert-success';
+                icon = 'fa-check-circle';
+                break;
+            case 'error':
+                alertClass = 'alert-danger';
+                icon = 'fa-exclamation-triangle';
+                break;
+            case 'warning':
+                alertClass = 'alert-warning';
+                icon = 'fa-exclamation-triangle';
+                break;
+            case 'training':
+                alertClass = 'alert-warning';
+                icon = 'fa-spinner fa-spin';
+                break;
+            case 'ready':
+                alertClass = 'alert-success';
+                icon = 'fa-play-circle';
+                break;
+            default:
+                alertClass = 'alert-info';
+                icon = 'fa-info-circle';
+        }
+        
+        $('#svm-status').html(`
+            <div class="alert ${alertClass}">
+                <i class="fas ${icon} me-2"></i>${message}
+            </div>
+        `);
+    }
+    
+    function refreshSVMResults() {
+        checkSVMStatus();
+    }
+</script>
+{% endblock %} 

@@ -1,0 +1,169 @@
+{% extends 'analysis/base.html' %}
+
+{% block title %}About - Statistical Analysis Dashboard{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="main-content">
+            <div class="text-center mb-5">
+                <h1 class="text-primary mb-3">
+                    <i class="fas fa-chart-line me-3"></i>
+                    Statistical Analysis Dashboard
+                </h1>
+                <p class="lead">
+                    A powerful, interactive statistical analysis and visualization platform 
+                    built with Django and modern web technologies.
+                </p>
+            </div>
+            
+            <div class="row mb-5">
+                <div class="col-md-4 text-center mb-4">
+                    <div class="stat-card">
+                        <i class="fas fa-upload fa-3x mb-3"></i>
+                        <h5>Multiple Data Sources</h5>
+                        <p>Upload CSV files, use random data, or analyze local datasets</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--success-color), #69db7c);">
+                        <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                        <h5>Interactive Visualizations</h5>
+                        <p>Dynamic plots including histograms, box plots, Q-Q plots, and correlation matrices</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #74c0fc);">
+                        <i class="fas fa-calculator fa-3x mb-3"></i>
+                        <h5>Advanced Statistics</h5>
+                        <p>Comprehensive statistical analysis including hypothesis testing and distribution analysis</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-features me-2"></i>Key Features
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Data Management</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>CSV file upload support</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Excel file compatibility (.xlsx, .xls)</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Random data generation</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Local dataset integration</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Automatic data type detection</li>
+                            </ul>
+                            
+                            <h5 class="text-primary mt-4">Statistical Analysis</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Descriptive statistics</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Distribution parameters</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Hypothesis testing (t-tests)</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Normality testing (Shapiro-Wilk)</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Correlation analysis</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Visualizations</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Interactive histograms</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Box plots for distribution analysis</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Q-Q plots for normality assessment</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Correlation heatmaps</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Customizable colors and bin sizes</li>
+                            </ul>
+                            
+                            <h5 class="text-primary mt-4">User Experience</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Responsive design</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Real-time updates</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Tabbed interface</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Loading indicators</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Error handling</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>Technology Stack
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Backend</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fab fa-python me-2 text-warning"></i><strong>Django 4.2+</strong> - Web framework</li>
+                                <li><i class="fas fa-table me-2 text-info"></i><strong>Pandas</strong> - Data manipulation</li>
+                                <li><i class="fas fa-chart-line me-2 text-success"></i><strong>NumPy</strong> - Numerical computing</li>
+                                <li><i class="fas fa-flask me-2 text-danger"></i><strong>SciPy</strong> - Statistical functions</li>
+                                <li><i class="fas fa-brain me-2 text-primary"></i><strong>Scikit-learn</strong> - Machine learning</li>
+                                <li><i class="fas fa-chart-area me-2 text-warning"></i><strong>Statsmodels</strong> - Statistical modeling</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Frontend</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fab fa-bootstrap me-2 text-primary"></i><strong>Bootstrap 5</strong> - UI framework</li>
+                                <li><i class="fas fa-chart-bar me-2 text-info"></i><strong>Plotly.js</strong> - Interactive charts</li>
+                                <li><i class="fab fa-js me-2 text-warning"></i><strong>jQuery</strong> - JavaScript library</li>
+                                <li><i class="fas fa-icons me-2 text-primary"></i><strong>Font Awesome</strong> - Icons</li>
+                                <li><i class="fas fa-mobile-alt me-2 text-success"></i><strong>Responsive Design</strong> - Mobile-friendly</li>
+                                <li><i class="fas fa-rocket me-2 text-danger"></i><strong>AJAX</strong> - Asynchronous updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-rocket me-2"></i>Getting Started
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                                <h6>1. Choose Data Source</h6>
+                                <p class="small text-muted">Select from random data, file upload, or local dataset</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <i class="fas fa-sliders-h fa-2x text-success mb-2"></i>
+                                <h6>2. Configure Analysis</h6>
+                                <p class="small text-muted">Set parameters like column selection, colors, and bin sizes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                                <h6>3. Explore Results</h6>
+                                <p class="small text-muted">View interactive plots, statistics, and data previews</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'analysis:dashboard' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play me-2"></i>Start Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
