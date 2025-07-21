@@ -42,9 +42,17 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
+RUN echo '#!/bin/bash\n\
+echo "Starting application on port 8000"\n\
+echo "Running database migrations..."\n\
+python manage.py migrate --noinput --settings=statistical_analysis.settings_docker\n\
+echo "Database migrations completed"\n\
+exec gunicorn --bind 0.0.0.0:8000 statistical_analysis.wsgi:application --workers 2 --timeout 120' > /app/start.sh && \
+    chmod +x /app/start.sh
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-# Run gunicorn
-CMD gunicorn --bind 0.0.0.0:8000 statistical_analysis.wsgi:application --workers 2 --timeout 120 
+# Run the startup script
+CMD ["/app/start.sh"] 
