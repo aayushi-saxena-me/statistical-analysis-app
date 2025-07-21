@@ -31,7 +31,7 @@ def dashboard(request):
     analysis_session, created = AnalysisSession.objects.get_or_create(
         session_id=session_id,
         defaults={
-            'data_source': 'local',
+            'data_source': 'random',
             'sample_size': 1000,
             'color': 'blue',
             'bins': 30,
