@@ -20,6 +20,9 @@ RUN apt-get update \
 # Copy requirements first (for better caching)
 COPY requirements.txt .
 
+# Verify Python version
+RUN python --version && python -c "import sys; print(f'Python {sys.version_info.major}.{sys.version_info.minor}')"
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
