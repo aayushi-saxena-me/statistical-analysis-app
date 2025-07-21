@@ -4,7 +4,6 @@ FROM python:3.12-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
 ENV DJANGO_SETTINGS_MODULE=statistical_analysis.settings_docker
 
 # Set work directory
@@ -38,11 +37,11 @@ RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser
 
 # Expose port
-EXPOSE $PORT
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health/ || exit 1
+    CMD curl -f http://localhost:8000/health/ || exit 1
 
 # Run gunicorn
-CMD gunicorn --bind 0.0.0.0:$PORT statistical_analysis.wsgi:application --workers 2 --timeout 120 
+CMD gunicorn --bind 0.0.0.0:8000 statistical_analysis.wsgi:application --workers 2 --timeout 120 
