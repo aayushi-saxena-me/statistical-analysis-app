@@ -10,6 +10,16 @@ def health_check(request):
     """Health check endpoint for Docker"""
     return JsonResponse({'status': 'healthy', 'service': 'statistical_analysis'})
 
+def simple_test(request):
+    """Ultra simple test - no database, no imports"""
+    import os
+    return JsonResponse({
+        'test': 'working',
+        'django_settings_module': os.environ.get('DJANGO_SETTINGS_MODULE'),
+        'database_url_exists': 'DATABASE_URL' in os.environ,
+        'database_url_value': os.environ.get('DATABASE_URL', 'NOT_SET')[:50] + '...' if os.environ.get('DATABASE_URL') else 'NOT_SET'
+    })
+
 def db_test(request):
     """Test database connection"""
     try:
@@ -37,6 +47,7 @@ def db_test(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('health/', health_check, name='health_check'),
+    path('simple-test/', simple_test, name='simple_test'),
     path('db-test/', db_test, name='db_test'),
     path('', include('analysis.urls')),
 ]
