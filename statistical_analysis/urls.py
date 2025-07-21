@@ -48,7 +48,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('health/', health_check, name='health_check'),
     path('simple-test/', simple_test, name='simple_test'),
-    path('db-test/', db_test, name='db_test'),
     path('', include('analysis.urls')),
 ]
 
